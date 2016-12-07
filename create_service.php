@@ -31,6 +31,9 @@ if(sizeof($table_data) > 0) {
 	echo "\n";
 
 	foreach ($table_data as $key => $value) {
+		$filename = $config['file_auto_keyword']."_".$key.".php";
+		$filelog = $config['file_auto_keyword']."_".$key.'.log';
+		
 		// run the php
 		$command = 'php '.$filename.' > '.$filelog;
 		$ll = shell_exec($command);
