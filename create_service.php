@@ -26,20 +26,15 @@ if(sizeof($table_data) > 0) {
 
 		$create_file = file_put_contents($filename, $content);
 		echo ($create_file ? "Successfully" : "Fail")." created file ".$filename."\n";
-	}
 
-	echo "\n";
-
-	foreach ($table_data as $key => $value) {
-		$filename = $config['file_auto_keyword']."_".$key.".php";
-		$filelog = $config['file_auto_keyword']."_".$key.'.log';
-		
-		// run the php
 		$command = 'php '.$filename.' > '.$filelog;
-		$ll = shell_exec($command);
-		echo $command."\n";
-		echo $ll;
+		$shell .= $command. ' & '	;
+		echo $command.PHP_EOL.PHP_EOL;
 	}
+	
+	$shell = rtrim($shell, " & ");
+	$ll = shell_exec($shell);
+	echo $ll;
 
 	echo "***********************************************\n";
 }

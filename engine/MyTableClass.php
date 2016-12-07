@@ -24,6 +24,8 @@ class MyTable
 
 		$this->ori_table_name = str_replace("%", "", $this->table_data['table_wildcard']);
 		$this->new_table_name = $this->ori_table_name."_".$this->config['table_auto_keyword']."_";
+
+		$this->checkMasterTableExistance();
 	}
 
 	function run()
@@ -35,6 +37,19 @@ class MyTable
 
 		// smart auto merge the table data
 		$this->mergeData($table_list);
+	}
+
+	function checkMasterTableExistance() {
+
+		$q = "SELECT 1 FROM ".$this->ori_table_name." LIMIT 1";
+		$sql = mysql_query($q);
+
+		if(!$sql) {
+			echo "\n**************************************************************\n";
+    		echo "\nPlease create Master Table (".$this->ori_table_name.") first in order to continue.\n";
+    		echo "\n**************************************************************\n".$q;
+    		die();
+    	}
 	}
 
 	function getTableNames()
@@ -97,7 +112,6 @@ class MyTable
 			    	echo $q." - ".($sql ? "OK" : "Notice: ".mysql_error())."\n";
 			    }
 			}
-
 		}
 		
 	}

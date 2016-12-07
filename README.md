@@ -2,6 +2,10 @@
 
 CHANGELOG
 
+v 2.1 (latest)
+- adding master table existance checking
+- synchronous service to prevent server being down
+
 v 2.0 (latest stable)
 - auto create several php files to separate services running
 
