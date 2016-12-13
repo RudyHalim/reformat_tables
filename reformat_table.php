@@ -38,7 +38,7 @@ if(is_array($table_data) && sizeof($table_data) > 0) {
 		// delete the rest backup tables:
 		// - table without the "table_auto_keyword" (see config)
 		// - table that are not mentioned as "table_wildcard" (see config)
-		// $mytable->deleteOldBackupTables();
+		$mytable->deleteOldBackupTables();
 	}
 
 } else {
