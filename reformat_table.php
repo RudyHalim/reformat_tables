@@ -17,30 +17,24 @@ echo PHP_EOL.'++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 echo PHP_EOL.' CONVERT DATABASE TABLES BACKUP INTO MONTHLY DATABASE TABLES BACKUP'.PHP_EOL;
 echo PHP_EOL.'++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'.PHP_EOL;
 
-$mytable = new MyTable($config);
+$mytable = new MyTable($config, $table_data);
 
 if(is_array($table_data) && sizeof($table_data) > 0) {
 
-	$mytable->showConfirmationFormCli($table_data);
 
-	echo '----------------------------------------------------------'.PHP_EOL;
-	echo ' RESULT:'.PHP_EOL;
-	echo '----------------------------------------------------------'.PHP_EOL;
+	// STEP 1: Confirmation from Config Files
+	$mytable->showConfirmationForm();
 
-	foreach ($table_data as $key => $data) {
+	// STEP 2: Ask if necessary to dump tables to sql file
+	$mytable->dumpTablesToFiles();
 
-		// set global wild card first
-		$mytable->prepare($data);
+	// STEP 3: Ask if necessary to run tidy up database tables
+	$mytable->runTidyTables();
 
-		// prepare the needed resources and merge the data
-		$mytable->run();
+	// STEP 4: Ask if necessary to delete dump sql folder
+	$mytable->deleteDumpFolder();
 
-		// delete the rest backup tables:
-		// - table without the "table_auto_keyword" (see config)
-		// - table that are not mentioned as "table_wildcard" (see config)
-		$mytable->deleteOldBackupTables();
-	}
 
 } else {
-	echo "No table found in config file.";
+	echo "No table found in config file.".PHP_EOL;
 }

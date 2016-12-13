@@ -13,23 +13,18 @@ class MyTable
 	private $allow_delete_backup_tables;
 	private $text_output;
 
-	function __construct($config) 
+	function __construct($config, $table_data) 
 	{
 		$this->config 						= $config;
 		$this->allow_delete_backup_tables 	= false;
-	}
-
-	function prepare($table_data)
-	{
 		$this->table_data = $table_data;
-
 		$this->ori_table_name = str_replace("%", "", $this->table_data['table_wildcard']);
 		$this->new_table_name = $this->ori_table_name."_".$this->config['table_auto_keyword']."_";
 
 		$this->checkMasterTableExistance();
 	}
 
-	function run()
+	function runTidyTables()
 	{
 		$table_list = $this->getTableNames();
 
@@ -251,20 +246,7 @@ class MyTable
 
 	function showConfirmationForm($table_data)
 	{
-		$string = '<form method="GET">';
-		$string .= '<h4>Please confirm following information to proceed:</h4>';
-		$string .= $this->generateTableLists($this->generateConfirmationFormLists($table_data));
-		$string .= '<h2><input type="submit" name="confirm" value="Confirm &amp; Proceed" /></h2>';
-		$string .= '</form>';
-
-		if($this->config['html_report']) {
-			echo $string;
-		}
-	}
-
-	function showConfirmationFormCli($table_data)
-	{
-		echo PHP_EOL.'Please confirm following information to proceed:'.PHP_EOL;
+		echo PHP_EOL.'Please verify below config parameters:'.PHP_EOL;
 		echo $this->generateTableListsCli($this->generateConfirmationFormLists($table_data));
 		
 		echo PHP_EOL."Are you sure this information is correct?  Type 'y' to continue: ";
@@ -276,23 +258,6 @@ class MyTable
 		}
 		fclose($handle);
 		echo "\n"; 
-	}
-
-	function generateTableLists($array) 
-	{
-		$return = '';
-		if(is_array($array)) {
-			foreach ($array as $group => $arrayvalue) {
-				$return .= '<h2>'.$group.'</h2>';
-
-				$return .= '<table>';
-				foreach ($arrayvalue as $key => $value) {
-					$return .= '<tr><td class="e">'.$key.'</td><td class="v">'.$value.'</td></tr>';
-				}
-				$return .= '</table>';
-			}
-		}
-		return $return;
 	}
 
 	function generateTableListsCli($array) 
