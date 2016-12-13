@@ -11,6 +11,7 @@ class MyTable
 	private $new_table_name;
 
 	private $allow_delete_backup_tables;
+	private $text_output;
 
 	function __construct($config) 
 	{
@@ -31,12 +32,17 @@ class MyTable
 	function run()
 	{
 		$table_list = $this->getTableNames();
+
+		echo str_pad("Table Name: ", 30).strtoupper($this->ori_table_name).PHP_EOL;
 		
 		// create the new possible table names per months
 		$this->createTableperMonths($table_list);
 
 		// smart auto merge the table data
 		$this->mergeData($table_list);
+
+		// creating logs
+		$this->writeLogs();
 	}
 
 	function checkMasterTableExistance() {
@@ -86,10 +92,6 @@ class MyTable
 		$sql = mysql_query($q) or die(mysql_error());
 		$r=mysql_fetch_assoc($sql);
 
-		// if($this->config['html_report']) {
-		// 	echo $q."<br /><br />";
-		// }
-
 		$this->mindate = $r['mindate'];
 		$this->maxdate = $r['maxdate'];
 	}
@@ -99,6 +101,8 @@ class MyTable
 
 		if(is_array($table_list) && sizeof($table_list) > 0) {
 
+			echo str_pad("Creating monthly tables  ", 30);
+
 			// set the month's range
 			$this->setMonthsGroup($table_list);
 
@@ -106,12 +110,10 @@ class MyTable
 			    $q = "CREATE TABLE IF NOT EXISTS ".$value." LIKE ".$this->ori_table_name;
 			    $sql = mysql_query($q);
 
-			    if($this->config['html_report']) {
-			    	
-			    } else {
-			    	echo $q." - ".($sql ? "OK" : "Notice: ".mysql_error())."\n";
-			    }
+		    	$this->text_output .= PHP_EOL.$q." - ".($sql ? "OK" : "Notice: ".mysql_error())."\n";
 			}
+
+			echo "OK".PHP_EOL;
 		}
 		
 	}
@@ -138,11 +140,7 @@ class MyTable
 		$is_success_all = true;
 		$entered_loop 	= false;
 
-		if($this->config['html_report']) {
-			echo '<h4>Process result:</h4>';
-			echo '<table>';
-			echo '<tr class="h"><td>Query</td><td>Status</td></tr>';
-		}
+		echo str_pad('Start Merging ', 30);
 
 		foreach ($table_list as $table_name) {
 			$entered_loop = true;
@@ -165,20 +163,13 @@ class MyTable
 						$is_success_all = false;
 					}
 
-					if($this->config['html_report']) {
-						$trclass = "e" ? "v" : "e";
-						echo '<tr class="'.$trclass.'"><td>'.$q."</td><td>".($sql ? "OK" : "Error ".mysql_errno().": ".mysql_error()).'</td></tr>';
-					} else {
-						echo $q." - ".($sql ? "OK" : "Error ".mysql_errno().": ".mysql_error())."\n";
-					}
+					$this->text_output .= $q." - ".($sql ? "OK" : "Error ".mysql_errno().": ".mysql_error()).PHP_EOL;
 				}
 				$month = strtotime("+1 month", $month);
 			}
 		}
 
-		if($this->config['html_report']) {
-			echo '</table>';
-		}
+		echo 'OK'.PHP_EOL;
 
 		// put it to global var
 		if($entered_loop && $is_success_all) {
@@ -223,34 +214,22 @@ class MyTable
 		// - table that are not mentioned as "table_wildcard" (see config)
 
 		if($this->allow_delete_backup_tables) {
-
 			$backup_tables = $this->getOldBackupTableNames();
-
 			if(sizeof($backup_tables) > 0) {
-				if($this->config['html_report']) {
-					echo '<table>';
-					echo '<tr class="h"><td>Query</td><td>Status</td></tr>';
-				}
+
+				echo 'Start Delete Backup Tables ... ';
 
 				foreach ($backup_tables as $key => $value) {
 					$q = "DROP TABLE ".$value;
 					$sql = mysql_query($q);
 
-					if($this->config['html_report']) {
-						$trclass = "e" ? "v" : "e";
-						echo '<tr class="'.$trclass.'"><td>'.$q."</td><td>".($sql ? "OK" : "Error ".mysql_errno().": ".mysql_error()).'</td></tr>';
-					} else {
-						echo $q." - ".($sql ? "OK" : "Error ".mysql_errno().": ".mysql_error())."\n";
-					}
+					$this->text_output .= $q." - ".($sql ? "OK" : "Error ".mysql_errno().": ".mysql_error()).PHP_EOL;
 				}
+				echo 'OK'.PHP_EOL;
 
-				if($this->config['html_report']) {
-					echo '</table>';
-				}
 			}
-
 		} else {
-			echo "Backup tables for <b>".$this->ori_table_name."</b> are not allowed to delete.\n";
+			echo "Backup tables for ".$this->ori_table_name." are not allowed to delete.".PHP_EOL;
 		}
 	}
 
@@ -283,6 +262,22 @@ class MyTable
 		}
 	}
 
+	function showConfirmationFormCli($table_data)
+	{
+		echo PHP_EOL.'Please confirm following information to proceed:'.PHP_EOL;
+		echo $this->generateTableListsCli($this->generateConfirmationFormLists($table_data));
+		
+		echo PHP_EOL."Are you sure this information is correct?  Type 'y' to continue: ";
+		$handle = fopen ("php://stdin","r");
+		$line = fgets($handle);
+		if(trim($line) != 'y'){
+		    echo "ABORTING!\n";
+		    exit;
+		}
+		fclose($handle);
+		echo "\n"; 
+	}
+
 	function generateTableLists($array) 
 	{
 		$return = '';
@@ -295,6 +290,21 @@ class MyTable
 					$return .= '<tr><td class="e">'.$key.'</td><td class="v">'.$value.'</td></tr>';
 				}
 				$return .= '</table>';
+			}
+		}
+		return $return;
+	}
+
+	function generateTableListsCli($array) 
+	{
+		$return = '';
+		if(is_array($array)) {
+			foreach ($array as $group => $arrayvalue) {
+				$return .= PHP_EOL . $group . PHP_EOL;
+
+				foreach ($arrayvalue as $key => $value) {
+					$return .= str_pad($key, 30) . $value . PHP_EOL;
+				}
 			}
 		}
 		return $return;
@@ -313,20 +323,31 @@ class MyTable
 			$this->prepare($value);
 			$this->setMonthsGroup($this->getTableNames());
 
-			$return['Scenario '.($key+1)] = array(
+			$return['SCENARIO '.($key+1)] = array(
 				'Master Table for Scenario '.($key+1) 		=> $this->ori_table_name
 				, 'Table Wild Card to SEARCH' 				=> $this->table_data['table_wildcard']
 				, 'Datetime Column' 						=> $this->table_data['datetime_column']
 				, 'Full Columns Name' 						=> implode(", ", $this->table_data['full_column_name'])
-				, 'Merge from Table'						=> implode("<br />", $this->getTableNames())
-				, 'Range Date Time'							=> $this->mindate." to ".$this->maxdate
-				, 'Table to DROP on success'				=> implode("<br />", $this->getOldBackupTableNames())
-				, 'New Table to CREATE'						=> implode("<br />", $this->getTableNamesToCreate())
+				, 'Merge from Table'						=> implode(", ", $this->getTableNames())
+				, 'Range Date Time'							=> $this->mindate && $this->mindate ? $this->mindate." to ".$this->maxdate : "(No more table to update)"
+				, 'Table to DROP on success'				=> $this->getOldBackupTableNames() ? implode(", ", $this->getOldBackupTableNames()) : "(No more table to update)"
+				, 'New Table to CREATE'						=> $this->getTableNamesToCreate() ? implode(", ", $this->getTableNamesToCreate()) : "(No more table to update)"
 			);
-
-
 		}
-
 		return $return;
+	}
+
+	function writeLogs()
+	{
+		echo str_pad("Write to log ", 30);
+		if(strlen($this->text_output) > 0) {
+			$filename = $this->config['table_auto_keyword'].'_'.$this->ori_table_name.'.log';
+
+			$create_file = file_put_contents($filename, $this->text_output);
+			echo ($create_file ? "OK" : "Fail")." (".$filename.")";
+		} else {
+			echo "No more query executed.";
+		}
+		echo PHP_EOL.PHP_EOL;
 	}
 }
