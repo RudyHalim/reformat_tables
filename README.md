@@ -2,11 +2,15 @@
 
 CHANGELOG
 
-v 2.1 (latest)
+v 2.2 (latest stable) 
+- add confirmation cli before tidy process
+- updated reporting formats
+
+v 2.1
 - adding master table existance checking
 - synchronous service to prevent server being down
 
-v 2.0 (latest stable)
+v 2.0 
 - auto create several php files to separate services running
 
 v 1.2
