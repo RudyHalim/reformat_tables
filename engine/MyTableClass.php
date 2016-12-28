@@ -7,6 +7,7 @@ class MyTable
 	private $mindate;
 	private $maxdate;
 
+	private $master_table_name;
 	private $ori_table_name;
 	private $new_table_name;
 
@@ -22,8 +23,9 @@ class MyTable
 	{
 		$this->table_data = $table_data;
 
-		$this->ori_table_name = str_replace("%", "", $this->table_data['table_wildcard']);
-		$this->new_table_name = $this->ori_table_name."_".$this->config['table_auto_keyword']."_";
+		$this->master_table_name 	= $this->table_data['table_master'];
+		$this->ori_table_name 		= str_replace("%", "", $this->table_data['table_wildcard']);
+		$this->new_table_name 		= $this->master_table_name."_".$this->config['table_auto_keyword']."_";
 	}
 
 	function run()
@@ -88,13 +90,13 @@ class MyTable
 			$this->setMonthsGroup($table_list);
 
 			foreach ($this->getTableNamesToCreate() as $key => $value) {
-			    $q = "CREATE TABLE IF NOT EXISTS ".$value." LIKE ".$this->ori_table_name;
+			    $q = "CREATE TABLE IF NOT EXISTS ".$value." LIKE ".$this->master_table_name;
 			    $sql = mysql_query($q);
 
 			    if($this->config['html_report']) {
 			    	
 			    } else {
-			    	echo $q." - ".($sql ? "OK" : "Notice: ".mysql_error())."\n";
+			    	echo $this->getTime().$q." - ".($sql ? "OK" : "Notice: ".mysql_error())."\n";
 			    }
 			}
 
@@ -155,7 +157,7 @@ class MyTable
 						$trclass = "e" ? "v" : "e";
 						echo '<tr class="'.$trclass.'"><td>'.$q."</td><td>".($sql ? "OK" : "Error ".mysql_errno().": ".mysql_error()).'</td></tr>';
 					} else {
-						echo $q." - ".($sql ? "OK" : "Error ".mysql_errno().": ".mysql_error())."\n";
+						echo $this->getTime().$q." - ".($sql ? "OK" : "Error ".mysql_errno().": ".mysql_error())."\n";
 					}
 				}
 				$month = strtotime("+1 month", $month);
@@ -226,7 +228,7 @@ class MyTable
 						$trclass = "e" ? "v" : "e";
 						echo '<tr class="'.$trclass.'"><td>'.$q."</td><td>".($sql ? "OK" : "Error ".mysql_errno().": ".mysql_error()).'</td></tr>';
 					} else {
-						echo $q." - ".($sql ? "OK" : "Error ".mysql_errno().": ".mysql_error())."\n";
+						echo $this->getTime().$q." - ".($sql ? "OK" : "Error ".mysql_errno().": ".mysql_error())."\n";
 					}
 				}
 
@@ -243,11 +245,15 @@ class MyTable
 	function getOldBackupTableNames()
 	{
 		$return = array();
+
+		// to include underscore in query condition as a non preserve word
+		$table_to_delete = str_replace("_", "\_", $this->table_data['table_wildcard']);
+
 		$q = "SELECT table_name FROM information_schema.tables 
 					WHERE table_schema LIKE '".$this->config['db']."' 
-					AND table_name like '".$this->table_data['table_wildcard']."' 
+					AND table_name like '".$table_to_delete."' 
 					AND table_name NOT LIKE '%".$this->config['table_auto_keyword']."%'
-					AND table_name != '".$this->ori_table_name."' 
+					AND table_name != '".$this->master_table_name."' 
 					;";
 		$sql = mysql_query($q);
 		while ($r=mysql_fetch_assoc($sql)) {
@@ -314,5 +320,13 @@ class MyTable
 		}
 
 		return $return;
+	}
+
+	function getTime()
+	{
+		$t = microtime(true);
+		$micro = sprintf("%06d",($t - floor($t)) * 1000000);
+
+		echo date("Y-m-d H:i:s:".$micro." : ", $t);
 	}
 }

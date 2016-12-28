@@ -15,11 +15,13 @@ $config = array(
 $table_data = array(
 	'0' => array(
 		'table_wildcard' => 'table_log%'
+		, 'table_master' => 'table_log'
 		, 'datetime_column' => 'created'
 		, 'full_column_name' => array('created', 'title', 'tipe', 'qty')
 	),
 	'1' => array(
 		'table_wildcard' => 'table_ack%'
+		, 'table_master' => 'table_ack'
 		, 'datetime_column' => 'created'
 		, 'full_column_name' => array('created', 'title', 'tipe', 'qty')
 	)
